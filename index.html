@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oceania Information</title>
+    <style>
+        /* Add your CSS styling here */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        
+    
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .qa {
+            page-break-inside: avoid; /* Avoid page break inside question and answer pair */
+        }
+        .question {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .answer {
+            margin-bottom: 20px;
+        }
+        .section-heading {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        hr {
+            margin: 10px 0;
+            border: none;
+            border-top: 1px solid #ccc;
+        }
+
+        /* Define page size and margins for printing */
+        @page {
+            size: A4;
+            margin: 20mm;
+            
+        }
+
+        
+        #header {
+        position: relative;
+        }
+
+        /* Style for the image in the header */
+        #headerImage {
+        width: 100%;
+        height: auto; /* Maintain image aspect ratio */
+        max-height: 100%; /* Ensure the image doesn't exceed the page height */
+        }
+
+        /* Styles for printing */
+        @media print {
+        #jsonFileInput, #generateButton, #mcqButton, #fillButton, #sqButton, #lqButton, #withAnswers {
+        display: none; /* Hide file input and buttons when printing */
+        }
+
+        /* Style for the header container */
+        #header {
+        position: relative;
+        }
+
+        /* Style for the image in the header */
+        #headerImage {
+        width: 100%;
+        height: auto; /* Maintain image aspect ratio */
+        max-height: 100%; /* Ensure the image doesn't exceed the page height */
+        page-break-before: always; /* Force a page break before this element */
+        }
+    
+
+        /* Style for the content container */
+        .container {
+        margin-top: 10mm; /* Adjust margin to make space below the image */
+        }
+
+        /* Apply styles to the first page only */
+        @page:first {
+        /* Reset margins for the first page to allow space for the image */
+        margin-top: 5mm;
+        margin-bottom: 5mm;
+        margin-left: 20mm;
+        margin-right: 20mm;
+    
+
+        }
+        .WatermarkImage {
+            position: fixed;
+            width: 100%; /* Adjust the width as needed */
+            height: auto;
+            max-height: 100%; /* Ensure the image doesn't exceed the page height */
+            page-break-before: always;
+            z-index: -1; /* Place the image behind other content */
+            transform: translate(-50%, -50%) rotate(45deg); /* Center horizontally and vertically, rotate 45 degrees */
+            transform-origin: center center;
+            top: 50%;
+            left: 50%;
+        }
+    
+    }
+    </style>
+</head>
+<body>
+    <img src="D:\interactive classes website\Assignment creator workflow\text file\watermark.png" alt="Your Image" class="WatermarkImage">
+    <div id="header">
+    <img src="D:\interactive classes website\Assignment creator workflow\text file\header_removed.png" alt="Your Image" id="headerImage">
+    </div>
+    <div class="container">
+        
+        <!-- Input for JSON file selection -->
+        <input type="file" id="jsonFileInput" accept=".json">
+        
+        <!-- Buttons for each JSON format -->
+        <button id="mcqButton">MCQ Format</button>
+        <button id="fillButton">Fill in the Blanks Format</button>
+        <button id="sqButton">Short Question Format</button>
+        <button id="lqButton">Long Question Format</button>
+        
+        <!-- Checkbox to generate content with or without answers -->
+        <label for="withAnswers"></label>
+        <input type="checkbox" id="withAnswers" checked>
+        
+        <button id="generateButton">Generate Worksheet</button>
+
+        <div id="data"></div>
+    </div>
+
+    <script>
+        let currentFormat = 'mcq'; // Default format
+
+        // Function to create the HTML structure from JSON data
+        function createHTML(data, format, showAnswers) {
+            let html = '';
+            
+            if (format === 'mcq') {
+                html += '<div class="section-heading">MCQ Questions</div>';
+                data.forEach((item, index) => {
+                    html += `<div class="qa">`;
+                    html += `<div class="question">Q${index + 1}: ${item.question}</div>`;
+                    if (showAnswers) {
+                        item.options.forEach(option => {
+                            html += `<div><input type="checkbox" disabled> ${option}</div>`;
+                        });
+                    } else {
+                        item.options.forEach(option => {
+                            html += `<div><input type="checkbox"> ${option}</div>`;
+                        });
+                    }
+                    html += `</div>`;
+                });
+            } else {
+                html += '<div class="section-heading">' + format.toUpperCase() + ' Questions</div>';
+                data.forEach((item, index) => {
+                    html += `<div class="qa">`;
+                    html += `<div class="question">Q${index + 1}: ${item.question}</div>`;
+                    if (showAnswers) {
+                        if (format === 'fill') {
+                            html += `<div class="answer">Answer: ${item.correct_answer}</div>`;
+                        } else {
+                            html += `<div class="answer">Answer: ${item.answer}</div>`;
+                        }
+                    } else {
+                        if (format === 'fill') {
+                            html += `<div class="answer">Answer: _________________</div>`;
+                        } else {
+                            html += `<div class="answer">Answer: ___________________________________________________________________</div>`;
+                        }
+                    }
+                    html += `</div>`;
+                });
+            }
+            return html;
+        }
+
+        // Function to load JSON data
+        function loadJSONFile() {
+            const fileInput = document.getElementById('jsonFileInput');
+            const dataContainer = document.getElementById('data');
+            const withAnswersCheckbox = document.getElementById('withAnswers');
+
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const jsonData = JSON.parse(event.target.result);
+                    dataContainer.innerHTML = createHTML(jsonData, currentFormat, withAnswersCheckbox.checked);
+                };
+                reader.readAsText(file);
+            } else {
+                alert("Please select a JSON file.");
+            }
+        }
+
+        // Event listener for the "Generate Worksheet" button
+        const generateButton = document.getElementById('generateButton');
+        generateButton.addEventListener('click', loadJSONFile);
+
+        // Event listeners for JSON format buttons
+        const mcqButton = document.getElementById('mcqButton');
+        mcqButton.addEventListener('click', () => {
+            currentFormat = 'mcq';
+            loadJSONFile();
+        });
+
+        const fillButton = document.getElementById('fillButton');
+        fillButton.addEventListener('click', () => {
+            currentFormat = 'fill';
+            loadJSONFile();
+        });
+
+        const sqButton = document.getElementById('sqButton');
+        sqButton.addEventListener('click', () => {
+            currentFormat = 'sq';
+            loadJSONFile();
+        });
+
+        const lqButton = document.getElementById('lqButton');
+        lqButton.addEventListener('click', () => {
+            currentFormat = 'lq';
+            loadJSONFile();
+        });
+
+        // Initially, load MCQ questions
+        loadJSONFile();
+    </script>
+</body>
+</html>
